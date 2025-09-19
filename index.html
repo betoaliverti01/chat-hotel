@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chat – Recepção do Hotel (Demo)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f4f6fb; --card:#ffffff; --primary:#1e66f5; --text:#0f172a; --muted:#64748b;
+      --bubble-me:#1e66f5; --bubble-them:#eef2ff; --shadow:0 10px 30px rgba(2,6,23,.08);
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; background:var(--bg); color:var(--text); font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px;
+    }
+    .wrap{width:100%; max-width:920px; display:grid; grid-template-columns:1.1fr .9fr; gap:24px}
+    .panel{
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px;
+    }
+    .title{font-weight:600; font-size:18px; margin:4px 0 12px}
+    .muted{color:var(--muted); font-size:14px}
+    .chat{
+      display:flex; flex-direction:column; height:70vh; min-height:520px; overflow:hidden;
+    }
+    .header{
+      display:flex; align-items:center; gap:12px; padding:8px 12px; border-radius:12px; background:#f8fafc; margin-bottom:10px;
+    }
+    .badge{font-size:12px; padding:4px 10px; border-radius:999px; background:#eef2ff; color:#312e81; font-weight:600}
+    .room{margin-left:auto; font-size:12px; color:var(--muted)}
+    .scroll{
+      flex:1; overflow:auto; padding:10px 6px; display:flex; flex-direction:column; gap:10px; scroll-behavior:smooth;
+      background:linear-gradient(#fff,#fff) padding-box, linear-gradient(180deg,#fff0,#e2e8f0) border-box; border:1px solid #e2e8f0; border-radius:12px;
+    }
+    .msg{max-width:72%; padding:10px 12px; border-radius:14px; line-height:1.35; font-size:14px; word-wrap:break-word; box-shadow:0 4px 16px rgba(2,6,23,.06)}
+    .me{align-self:flex-end; background:var(--bubble-me); color:#fff; border-bottom-right-radius:6px}
+    .them{align-self:flex-start; background:var(--bubble-them); border-bottom-left-radius:6px}
+    .meta{font-size:11px; color:var(--muted); margin-top:4px}
+    .composer{display:flex; gap:10px; margin-top:10px}
+    .composer textarea{
+      flex:1; resize:none; height:46px; padding:10px 12px; border-radius:12px; border:1px solid #e2e8f0; outline:none;
+      box-shadow:inset 0 1px 0 rgba(0,0,0,.02);
+    }
+    .btn{
+      background:var(--primary); color:#fff; border:none; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600;
+      box-shadow:0 8px 20px rgba(30,102,245,.22); transition:transform .06s ease, box-shadow .2s ease, opacity .2s ease;
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn.secondary{background:#e2e8f0; color:#0f172a; box-shadow:none}
+    .stack{display:flex; flex-direction:column; gap:10px}
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    code.inline{background:#f1f5f9; padding:2px 6px; border-radius:6px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px}
+    @media (max-width:900px){ .wrap{grid-template-columns:1fr} .chat{height:68vh} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Coluna do chat -->
+    <section class="panel chat">
+      <div class="header">
+        <div style="font-weight:600">Recepção do Hotel</div>
+        <span id="roleBadge" class="badge">Visitante</span>
+        <div id="roomInfo" class="room"></div>
+      </div>
+      <div id="messages" class="scroll" aria-live="polite"></div>
+      <form id="composer" class="composer">
+        <textarea id="input" placeholder="Digite sua mensagem..." maxlength="1000"></textarea>
+        <button class="btn" type="submit" title="Enviar">Enviar</button>
+      </form>
+    </section>
+
+    <!-- Coluna de controles -->
+    <aside class="panel stack">
+      <div>
+        <div class="title">Como iniciar</div>
+        <ol class="muted" style="margin:0 0 8px 16px">
+          <li>Clique em <b>Iniciar como Recepcionista</b> para abrir uma sala.</li>
+          <li>Copie e envie o <b>link do cliente</b>.</li>
+          <li>Converse em tempo real; mensagens ficam salvas na sala.</li>
+        </ol>
+      </div>
+
+      <div class="grid">
+        <button id="asReception" class="btn" type="button">Iniciar como Recepcionista</button>
+        <button id="asClient" class="btn secondary" type="button">Entrar como Cliente</button>
+      </div>
+
+      <div class="stack">
+        <div class="title">Link do cliente</div>
+        <input id="clientLink" type="text" readonly style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:10px" />
+        <div class="muted">Envie este link para o cliente acessar o chat desta sala.</div>
+      </div>
+
+      <div class="stack">
+        <div class="title">Demonstração de mensagens prontas</div>
+        <div class="grid">
+          <button class="btn secondary quick" data-text="Olá! Seja bem-vindo(a) à recepção. Como posso ajudar na sua reserva?">Saudação</button>
+          <button class="btn secondary quick" data-text="Para prosseguirmos, poderia informar: nome completo, data de check-in, data de check-out e tipo de quarto?">Coleta dados</button>
+        </div>
+        <div class="grid">
+          <button class="btn secondary quick" data-text="Perfeito! Já registrei sua solicitação. Em instantes confirmo a disponibilidade.">Confirmação</button>
+          <button class="btn secondary quick" data-text="Obrigada(o)! Qualquer dúvida, permaneço à disposição.">Encerramento</button>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="title">Status</div>
+        <div class="muted">Sala: <code class="inline" id="roomStatus">–</code></div>
+        <div class="muted">Papel: <code class="inline" id="roleStatus">–</code></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Firebase -->
+  <script type="module">
+    // ===== 1) Firebase (cole sua configuração) =====
+    // Crie um app Web no console do Firebase e cole o objeto abaixo.
+    const firebaseConfig = {
+      // TODO: COLE SEU CONFIG DO FIREBASE AQUI
+      // apiKey: "...",
+      // authDomain: "...",
+      // projectId: "...",
+      // storageBucket: "...",
+      // messagingSenderId: "...",
+      // appId: "..."
+    };
+
+    // ===== 2) Utilidades =====
+    const $ = (sel)=>document.querySelector(sel);
+    const params = new URLSearchParams(location.search);
+    const randomRoom = () => Math.random().toString(36).slice(2,8);
+    const now = () => new Date();
+
+    // ===== 3) Inicialização Firebase =====
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+    import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+
+    let app, db;
+    try {
+      app = initializeApp(firebaseConfig);
+      db  = getFirestore(app);
+    } catch (e) {
+      alert("⚠️ Configure o Firebase antes de usar.\nAbra o arquivo e cole seu firebaseConfig.");
+      console.error(e);
+    }
+
+    // ===== 4) Estado do chat =====
+    let role = (params.get("role") === "reception") ? "reception" : (params.get("role") === "client" ? "client" : null);
+    let room = params.get("room") || null;
+    const nameByRole = r => r==="reception" ? "Recepção" : "Cliente";
+
+    const input = $("#input");
+    const form = $("#composer");
+    const messagesEl = $("#messages");
+    const roleBadge = $("#roleBadge");
+    const roomInfo = $("#roomInfo");
+    const clientLink = $("#clientLink");
+    const roomStatus = $("#roomStatus");
+    const roleStatus = $("#roleStatus");
+
+    function updateBadges(){
+      roleBadge.textContent = role ? (role==="reception" ? "Recepcionista" : "Cliente") : "Visitante";
+      roomInfo.textContent = room ? `Sala • ${room}` : "";
+      roomStatus.textContent = room || "–";
+      roleStatus.textContent = role ? roleBadge.textContent : "–";
+      if (room && role==="reception"){
+        const url = `${location.origin}${location.pathname}?room=${encodeURIComponent(room)}&role=client`;
+        clientLink.value = url;
+      }
+    }
+
+    // ===== 5) Entrar como recepcionista / cliente =====
+    $("#asReception").onclick = ()=>{
+      role = "reception";
+      room = room || randomRoom();
+      const url = new URL(location.href);
+      url.searchParams.set("room", room);
+      url.searchParams.set("role", "reception");
+      history.replaceState({}, "", url.toString());
+      updateBadges();
+      listenMessages();
+    };
+
+    $("#asClient").onclick = ()=>{
+      role = "client";
+      room = room || prompt("Informe o código da sala (recebido da recepção):", "") || randomRoom();
+      const url = new URL(location.href);
+      url.searchParams.set("room", room);
+      url.searchParams.set("role", "client");
+      history.replaceState({}, "", url.toString());
+      updateBadges();
+      listenMessages();
+    };
+
+    // Botões de mensagens rápidas
+    document.querySelectorAll(".quick").forEach(btn=>{
+      btn.onclick = ()=>{ input.value = btn.dataset.text; input.focus(); };
+    });
+
+    // ===== 6) Enviar mensagem =====
+    form.onsubmit = async (e)=>{
+      e.preventDefault();
+      if (!db) return;
+      const text = input.value.trim();
+      if (!text || !role || !room) return;
+      await addDoc(collection(db, "messages"), {
+        room,
+        role,
+        name: nameByRole(role),
+        text,
+        createdAt: new Date().toISOString()
+      });
+      input.value = "";
+      input.focus();
+    };
+
+    // ===== 7) Ouvir mensagens da sala =====
+    let unsub = null;
+    function listenMessages(){
+      if (!db || !room) return;
+      if (unsub) unsub();
+      const q = query(
+        collection(db, "messages"),
+        where("room", "==", room),
+        orderBy("createdAt", "asc")
+      );
+      unsub = onSnapshot(q, (snap)=>{
+        messagesEl.innerHTML = "";
+        snap.forEach(doc=>{
+          const m = doc.data();
+          const item = document.createElement("div");
+          item.className = "msg " + (m.role === role ? "me" : "them");
+          item.innerHTML = `
+            <div>${escapeHTML(m.text)}</div>
+            <div class="meta">${m.name} • ${formatTime(m.createdAt)}</div>
+          `;
+          messagesEl.appendChild(item);
+          messagesEl.scrollTop = messagesEl.scrollHeight;
+        });
+      });
+    }
+
+    function escapeHTML(s){
+      return s.replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
+    }
+    function formatTime(iso){
+      const d = new Date(iso);
+      const hh = d.getHours().toString().padStart(2,"0");
+      const mm = d.getMinutes().toString().padStart(2,"0");
+      return `${hh}:${mm}`;
+    }
+
+    // ===== 8) Auto-setup se já vier com ?room=&role= =====
+    if (role && room){ updateBadges(); listenMessages(); }
+    else { updateBadges(); }
+  </script>
+</body>
+</html>
