@@ -116,16 +116,27 @@
 
   <!-- Firebase -->
   <script type="module">
-    // ===== 1) Firebase (cole sua configuração) =====
-    // Crie um app Web no console do Firebase e cole o objeto abaixo.
-    const firebaseConfig = {
-      // TODO: COLE SEU CONFIG DO FIREBASE AQUI
-      // apiKey: "...",
-      // authDomain: "...",
-      // projectId: "...",
-      // storageBucket: "...",
-      // messagingSenderId: "...",
-      // appId: "..."
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBo8V5af91RdAArUE7aXX7qUVPdnply4kQ",
+  authDomain: "chat-hotel-45b1f.firebaseapp.com",
+  projectId: "chat-hotel-45b1f",
+  storageBucket: "chat-hotel-45b1f.firebasestorage.app",
+  messagingSenderId: "239514505060",
+  appId: "1:239514505060:web:dea3192cda74ecc924f471",
+  measurementId: "G-L4ZHZW8WG5"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
     };
 
     // ===== 2) Utilidades =====
@@ -259,3 +270,4 @@
   </script>
 </body>
 </html>
+
